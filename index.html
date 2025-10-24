@@ -1,0 +1,202 @@
+<!-- index.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tintagel Territory Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="hud">
+    <div class="brand">Tintagel Territory Game</div>
+    <div class="controls">
+      <span id="gameNameTag" class="tag strong">Game: —</span>
+
+      <!-- Phase buttons -->
+      <button id="btnEPMenu" type="button" class="phasebtn" title="EP Adjustment tools" disabled>EP Adjustment ▾</button>
+      <button id="btnStartExp" type="button" class="phasebtn" title="Begin expansion input" disabled>Start Expansion</button>
+      <button id="btnFinishExp" type="button" class="phasebtn" disabled title="End expansion input">Finish Expansion</button>
+      <button id="btnResolve" type="button" class="phasebtn" disabled title="Apply queued claims">Resolve Expansions</button>
+      <button id="btnFinishBidding" type="button" class="phasebtn" disabled title="Finish bidding and advance round">Finish Bidding</button>
+      <button id="btnUndoMove" type="button" class="phasebtn" disabled title="Undo last selected hex for the active player">Undo Last Selection</button>
+
+      <span id="timeline" class="tag strong"></span>
+      <span id="phaseTag" class="tag phase strong">Phase: —</span>
+
+      <button id="btnGameMenu" type="button" title="New/Save/Load Game & Load Round">Game Menu</button>
+      <button id="btnReset" type="button">Reset Game</button>
+      <button id="btnExportDevlog" type="button" class="subtle">Export DEVLOG</button>
+
+      <!-- Zoom controls -->
+      <div class="zoombox">
+        <button id="btnZoomOut" type="button" title="Zoom out">−</button>
+        <button id="btnZoomFit" type="button" title="Fit map to view">Fit</button>
+        <button id="btnZoomIn" type="button" title="Zoom in">+</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <aside class="side">
+      <h3 class="side-title">Fighters & EP</h3>
+      <ol id="epList" class="ep-list"></ol>
+
+      <!-- EP editor popup -->
+      <div id="epPop" class="pop elev" hidden>
+        <div class="pop-row">
+          <div class="pop-title" id="popName">EP</div>
+          <span id="popPhaseHint" class="muted"></span>
+        </div>
+        <div class="pop-row">
+          <button class="pill" data-add="-10">−10</button>
+          <button class="pill" data-add="-5">−5</button>
+          <button class="pill" data-add="-1">−1</button>
+          <button class="pill" data-add="1">+1</button>
+          <button class="pill" data-add="5">+5</button>
+          <button class="pill" data-add="10">+10</button>
+        </div>
+        <div class="pop-row">
+          <input id="popSet" type="number" placeholder="set EP to…" min="0" step="1">
+          <button id="popApplySet" class="pill">Set</button>
+          <button id="popClose" class="pill ghost">Close</button>
+        </div>
+      </div>
+
+      <!-- Bid popup -->
+      <div id="bidPop" class="pop elev" hidden>
+        <div class="pop-row">
+          <div class="pop-title" id="bidTitle">Bid</div>
+          <button id="bidClose" class="pill ghost">Close</button>
+        </div>
+        <div class="pop-row">
+          <input id="bidInput" type="number" min="0" step="1" value="0">
+          <button id="bidApply" class="pill">Place Bid</button>
+          <button id="bidNext" class="pill">Next Hex</button>
+        </div>
+      </div>
+
+      <!-- Game menu -->
+      <div id="gameMenuPop" class="pop wide elev" hidden>
+        <div class="pop-row">
+          <div class="pop-title">Game Menu</div>
+          <button id="gmClose" class="pill ghost">Close</button>
+        </div>
+        <div class="pop-row">
+          <div class="muted">Current: <span id="gmCurrentName">—</span></div>
+          <button id="gmSave" class="pill">Save Game</button>
+        </div>
+        <div class="pop-row"><div class="pop-title">New Game</div></div>
+        <div class="pop-row">
+          <input id="gmNewName" type="text" placeholder="Game name…" />
+          <input id="gmHexRadius" type="number" min="3" step="1" placeholder="Hex radius (optional, overrides auto)" />
+        </div>
+        <div class="pop-row">
+          <input id="gmHomeSep" type="number" min="2" step="1" placeholder="Home separation (steps on outer ring)" />
+          <input id="gmExtraRows" type="number" min="0" step="1" placeholder="Extra rows beyond homes" />
+          <button id="gmNewCreate" class="pill">Create</button>
+        </div>
+        <div class="muted">
+          If Hex radius is empty, size is computed from player count and Home separation. Map radius = home ring radius + extra rows.
+        </div>
+        <hr>
+        <div class="pop-row"><div class="pop-title">Load Game</div></div>
+        <div id="gmGameList" class="load-list"></div>
+        <hr>
+        <div class="pop-row"><div class="pop-title">Load Round (this game)</div></div>
+        <div id="gmRoundList" class="load-list"></div>
+      </div>
+
+      <!-- EP Adjustment submenu -->
+      <div id="epAdjustPop" class="pop elev" hidden>
+        <div class="pop-row">
+          <div class="pop-title">EP Adjustment</div>
+          <button id="epMenuClose" class="pill ghost">Close</button>
+        </div>
+        <div class="pop-row" style="flex-direction:column; align-items:stretch">
+          <button id="btnAssignEP" class="pill">Assign EP individually</button>
+          <button id="btnRandEP" class="pill">Randomize EP</button>
+        </div>
+        <div class="muted">Available only during EP Adjustment.</div>
+      </div>
+
+      <!-- Assign EP list -->
+      <div id="assignListPop" class="pop wide elev" hidden>
+        <div class="pop-row">
+          <div class="pop-title">Assign EP — Choose Fighter</div>
+          <button id="assignClose" class="pill ghost">Close</button>
+        </div>
+        <div id="assignList" class="load-list"></div>
+      </div>
+
+      <!-- Legend -->
+      <section id="legendBox" class="panel legend"></section>
+    </aside>
+
+    <main class="boardwrap">
+      <canvas id="board" width="1300" height="820"></canvas>
+    </main>
+
+    <!-- Right-side Bidding Queue window -->
+    <aside id="bidQueuePop" class="pop right wide elev" hidden>
+      <div class="pop-row">
+        <div class="pop-title">Bidding Queue</div>
+        <button id="bqClose" class="pill ghost">Close</button>
+      </div>
+      <div id="bqList" class="load-list"></div>
+      <div class="muted">Buttons unlock in order. Clicking a button focuses and highlights that hex.</div>
+    </aside>
+
+    <!-- Final Scores / Winner popup -->
+    <div id="scorePop" class="pop wide elev" hidden style="left:24px; top:140px;">
+      <div class="pop-row">
+        <div class="pop-title">Final Results</div>
+        <button id="scoreClose" class="pill ghost">Close</button>
+      </div>
+      <div id="scoreTitle" style="margin-bottom:8px;"></div>
+      <div id="scoreList" class="load-list"></div>
+      <div class="muted" style="margin-top:6px;">Totals are number of hexes controlled at end of the final round.</div>
+    </div>
+  </div>
+
+  <!-- Roster / Start Overlay -->
+  <section id="overlay" class="overlay">
+    <div class="panel">
+      <h2>Build Roster</h2>
+      <div class="row">
+        <label>Game Name <input id="setupGameName" type="text" placeholder="e.g., Tintagel League A" /></label>
+        <label>Hex radius (optional) <input id="hexRadiusInput" type="number" min="3" step="1" placeholder="auto" /></label>
+      </div>
+      <div class="row">
+        <label>Home separation <input id="homeSeparationInput" type="number" min="2" step="1" value="10" title="Minimum steps between homes on outer ring"></label>
+        <label>Extra rows beyond homes <input id="extraRowsInput" type="number" min="0" step="1" value="5" title="Map extends this many rows beyond home ring"></label>
+      </div>
+      <div class="row">
+        <label>Player name <input id="pName" type="text" placeholder="Enter name"></label>
+        <label>Rank
+          <select id="pRank">
+            <option value="">Select rank…</option>
+            <option>Man-at-Arms</option>
+            <option>Knight Bachelor</option>
+            <option>Knight Banneret</option>
+          </select>
+        </label>
+        <button id="btnAdd" type="button">Add</button>
+        <button id="btnAddSample10" type="button" class="action">Insert 10 Sample Fighters</button>
+      </div>
+      <table class="table" id="rosterTable">
+        <thead><tr><th>#</th><th>Name</th><th>Rank</th><th>Color</th><th></th></tr></thead>
+        <tbody id="rosterBody"></tbody>
+      </table>
+      <div class="row">
+        <label>Participants: <input id="participantCount" type="number" min="2" step="1" value="6"></label>
+        <label>Total Rounds: <input id="totalRounds" type="number" min="1" step="1" value="12" title="Game length in rounds"></label>
+        <button id="btnStart" type="button" onclick="window.__TTG_START()">Start Game</button>
+        <span class="muted">If you don’t add names, P1..PN will be auto-created.</span>
+      </div>
+    </div>
+  </section>
+
+  <script src="game.js"></script>
+</body>
+</html>
